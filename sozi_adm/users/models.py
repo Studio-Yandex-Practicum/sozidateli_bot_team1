@@ -20,10 +20,11 @@ class Candidate(AbstractUser):
         verbose_name='Имя',
         help_text='Имя',
     )
-    last_name = models.CharField(
+    telegram_ID = models.CharField(
         max_length=150,
-        verbose_name='Фамилия',
-        help_text='Фамилия',
+        blank=True,
+        verbose_name='Телеграм_ID',
+        help_text='Телеграм_ID',
     )
     password = models.CharField(
         max_length=150,
