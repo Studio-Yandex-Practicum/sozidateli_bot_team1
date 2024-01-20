@@ -1,22 +1,14 @@
 import re
 
-from aiogram import F, Router, types
-from aiogram.fsm.state import StatesGroup, State
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-import kb
-import text
-
-
-class RegisterUser(StatesGroup):
-    start_register = State()
-    name = State()
-    phone = State()
-    email = State()
-    category = State()
-    end_register = State()
+import keyboards
+from states import RegisterUser
+import constants
+from utils import creare_keyboard
 
 
 router = Router()
@@ -24,83 +16,100 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_handler(msg: Message):
-    await msg.answer(text.greet.format(name=msg.from_user.full_name),
-                     reply_markup=kb.invitation_to_a_meeting_kb)
+    await msg.answer(
+        constants.GREET.format(name=msg.from_user.full_name),
+        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
 
 
-@router.callback_query(F.data == 'agree')
-async def agree(clbck: types.CallbackQuery, state: FSMContext):
-    await clbck.message.answer(text.get_info)
-    await clbck.message.answer('Введите ваше имя')
+@router.message(F.text == 'Записаться на встречу')
+async def agree(msg: Message, state: FSMContext):
+    await msg.answer(constants.GET_INFO)
+    await msg.answer(constants.GET_NAME,
+                     reply_markup=creare_keyboard(keyboards.cancel))
     await state.set_state(RegisterUser.start_register)
-    await clbck.message.edit_reply_markup()
 
 
-@router.message(RegisterUser.start_register, F.text)
+@router.message(RegisterUser.start_register, F.text != 'Отмена')
 async def get_name(msg: Message, state: FSMContext):
     name = msg.text
     if re.match(r'\w', name):
+        await state.update_data(user_id=msg.chat.id)
         await state.update_data(name=name)
-        await msg.answer('Введите номер телефона в формате +7xxxxxxxxxx')
+        await msg.answer(constants.GET_PHONE,
+                         reply_markup=creare_keyboard(keyboards.cancel))
         await state.set_state(RegisterUser.name)
     else:
-        await msg.answer('Имя должно состоять только из букв')
+        await msg.answer(constants.ERROR_IN_NAME)
 
 
-@router.message(RegisterUser.name, F.text)
+@router.message(RegisterUser.name, F.text != 'Отмена')
 async def get_phone(msg: Message, state: FSMContext):
     phone = msg.text
     if re.match(r'\+7[0-9]{10}',
                 phone):
         await state.update_data(phone=phone)
-        await msg.answer('Введите адрес электронной почты')
+        await msg.answer(constants.GET_EMAIL,
+                         reply_markup=creare_keyboard(keyboards.cancel))
         await state.set_state(RegisterUser.phone)
     else:
-        await msg.answer('Номер телефона указан неверно')
+        await msg.answer(constants.ERROR_IN_PHONE)
 
 
-@router.message(RegisterUser.phone, F.text)
+@router.message(RegisterUser.phone, F.text != 'Отмена')
 async def get_email(msg: Message, state: FSMContext):
     email = msg.text
     if re.match(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b',
                 email):
         await state.update_data(email=email)
-        await msg.answer('Выберите категорию', reply_markup=kb.categories_kb)
+        await msg.answer(constants.CHOOSE_CATEGORY,
+                         reply_markup=creare_keyboard(keyboards.categories))
         await state.set_state(RegisterUser.email)
     else:
-        await msg.answer('Почта указана неверно')
+        await msg.answer(constants.ERROR_IN_EMAIL)
 
 
-@router.callback_query(RegisterUser.email, F.data)
-async def get_category(clbck: types.CallbackQuery, state: FSMContext):
-    await state.update_data(category=clbck.data)
+@router.message(RegisterUser.email, F.text != 'Отмена')
+async def get_category(msg: Message, state: FSMContext):
+    await state.update_data(category=msg.text)
     await state.set_state(RegisterUser.category)
     user_data = await state.get_data()
-    await clbck.message.answer(
-        f"""Данные указаны верно?
-        Имя: {user_data['name']}
-        Телефон: {user_data['phone']}
-        Почта: {user_data['email']}
-        Кому вы хотите помогать: {user_data['category']}""",
-        reply_markup=kb.yes_no_kb)
-    await clbck.message.edit_reply_markup()
+    await msg.answer(
+        constants.CHECK_DATA.format(
+            name=user_data['name'],
+            phone=user_data['phone'],
+            email=user_data['email'],
+            category=user_data['category']),
+        reply_markup=creare_keyboard(keyboards.yes_no))
 
 
-@router.callback_query(RegisterUser.category, F.data == 'confirm_user_data')
-async def save_user(clbck: types.CallbackQuery, state: FSMContext):
-    await clbck.message.answer(text.save_message)
-    await clbck.message.edit_reply_markup()
+@router.message(RegisterUser.category, F.text == 'Да')
+async def save_user(msg: Message, state: FSMContext):
+    await msg.answer(constants.SAVE_MESSAGE)
     await state.set_state(RegisterUser.end_register)
 
 
-@router.callback_query(F.data == 'error_in_user_data')
-async def return_to_correct(clbck: types.CallbackQuery, state: FSMContext):
-    await clbck.message.answer('Давайте попробуем еще раз')
-    await clbck.message.answer('Введите ваше имя')
+@router.message(F.text == 'Нет')
+async def return_to_correct(msg: Message, state: FSMContext):
+    await msg.answer(constants.ONE_MORE_TIME)
+    await msg.answer(constants.GET_NAME)
     await state.set_state(RegisterUser.start_register)
-    await clbck.message.edit_reply_markup()
 
 
-@router.callback_query(F.data == 'skip')
-async def skip(clbck: types.CallbackQuery):
-    await clbck.message.answer('Необходимо записаться на собеседование')
+@router.message(F.text == 'Записаться на собеседование')
+async def skip(msg: Message):
+    await msg.answer(constants.INVITATION_TO_INTERVIEW)
+
+
+@router.message(F.text == 'Подробнее о нас')
+async def about_us(msg: Message):
+    await msg.answer(constants.ABOUT_US)
+
+
+@router.message(F.text == 'Отмена')
+async def menu(msg: Message, state: FSMContext):
+    await state.set_data({})
+    await state.clear()
+    await msg.answer(constants.CANCEL_REGISTRATION)
+    await msg.answer(
+        constants.MENU,
+        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
