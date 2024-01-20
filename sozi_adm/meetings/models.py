@@ -1,8 +1,5 @@
 from django.db import models
 
-from django.db import models
-from users.models import Candidate
-
 
 class Meeting(models.Model):
     name = models.CharField(
@@ -38,15 +35,10 @@ class Meeting(models.Model):
         help_text='Ссылка на встречу',
     )
 
-    candidate = models.ForeignKey(
-        Candidate,
-        related_name='candidate_for_valanture',
-        on_delete=models.CASCADE
-    )
-
     class Meta:
         verbose_name = 'Встреча'
         verbose_name_plural = 'Встречи'
+        ordering = ('date_meeting', )
 
     def __str__(self):
         return self.name

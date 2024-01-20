@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users.apps.UsersConfig',
     'meetings.apps.MeetingsConfig',
+    'rest_framework',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -124,4 +126,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'users.Candidate'
+# AUTH_USER_MODEL = 'users.Candidate'
