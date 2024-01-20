@@ -30,8 +30,13 @@ class Candidate(models.Model):
     )
     category = models.CharField(
         max_length=150,
-        verbose_name='Хотите познакомиться с нами на открытой встрече?',
-        help_text='Хотите познакомиться с нами на открытой встрече?',
+        verbose_name='Кому помогаем',
+        help_text='Кому помогаем',
+    )
+    confirm_date = models.DateTimeField(
+        null=True,
+        verbose_name='Дата и время проведения встречи',
+        help_text='Дата и время проведения встречи',
     )
 
     class Meta:
