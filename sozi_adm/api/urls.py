@@ -5,7 +5,7 @@ from .views import CandidateViewSet, MeetingViewSet
 
 router = DefaultRouter()
 
-router.register('candidate', CandidateViewSet)
+router.register(r'candidate/(?P<id>\d+)', CandidateViewSet)
 router.register('meeting', MeetingViewSet, basename='meeting')
 
 urlpatterns = [
