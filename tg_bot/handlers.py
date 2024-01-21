@@ -1,4 +1,6 @@
+import datetime as dt
 import re
+import requests
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -15,9 +17,16 @@ router = Router()
 
 
 @router.message(Command('start'))
-async def start_handler(msg: Message):
+async def start_handler(msg: Message, state: FSMContext):
+    date_of_meeting = requests.get('http://127.0.0.1:8000/api/meeting/')
+    date_of_meeting = dt.datetime.strptime(
+        date_of_meeting.json()[0].get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
+        )
+    await state.update_data(date_meeting=date_of_meeting)
     await msg.answer(
-        constants.GREET.format(name=msg.from_user.full_name),
+        constants.GREET.format(name=msg.from_user.full_name,
+                               date=date_of_meeting.strftime('%d.%m'),
+                               time=date_of_meeting.strftime('%H:%M')),
         reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
 
 
@@ -70,7 +79,8 @@ async def get_email(msg: Message, state: FSMContext):
 
 @router.message(RegisterUser.email, F.text != 'Отмена')
 async def get_category(msg: Message, state: FSMContext):
-    await state.update_data(category=msg.text)
+    await state.update_data(category=msg.text,
+                            telegram_ID=msg.from_user.id)
     await state.set_state(RegisterUser.category)
     user_data = await state.get_data()
     await msg.answer(
@@ -84,6 +94,11 @@ async def get_category(msg: Message, state: FSMContext):
 
 @router.message(RegisterUser.category, F.text == 'Да')
 async def save_user(msg: Message, state: FSMContext):
+    user_data = await state.get_data()
+    requests.post(
+        f'http://127.0.0.1:8000/api/candidate/{user_data["telegram_ID"]}/',
+        user_data
+        )
     await msg.answer(constants.SAVE_MESSAGE)
     await state.set_state(RegisterUser.end_register)
 
