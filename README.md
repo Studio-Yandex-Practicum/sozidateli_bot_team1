@@ -1,6 +1,10 @@
 # sozidateli_bot_team1
 Проект телеграмм бота АНО Созидатели
 
+# Запуск проекта
+```
+docker compose up
+```
 
 # Запуск панели администратора
 ```
@@ -20,3 +24,11 @@ poetry install
 ```
 
 
+# Переменные окружения
+
+Для корректной работы, требуется файл .env с переменными среды:
+```
+BOT_TOKEN = "1111111111:1111111111111111111111111111111111111111111"
+SECRET_KEY = "qwertyqwertyqwertyqwertyqwertyqwertyqwertyqwertyqwerty"
+DEBUG="False"
+```

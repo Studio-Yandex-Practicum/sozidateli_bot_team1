@@ -1,0 +1,16 @@
+version: '3.3'
+services:
+  admin:
+    build: sozi_adm
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+
+  bot:
+    build: tg_bot
+    depends_on:
+      - admin
+    env_file:
+      - ./.env

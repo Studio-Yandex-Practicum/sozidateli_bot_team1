@@ -3,7 +3,6 @@ name = "tg-bot"
 version = "0.1.0"
 description = ""
 authors = ["defender4 <yatskevichas@gmail.com>"]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 aiogram = "^3.3.0"
