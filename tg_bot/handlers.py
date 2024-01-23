@@ -18,15 +18,17 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_handler(msg: Message, state: FSMContext):
-    date_of_meeting = requests.get('http://127.0.0.1:8000/api/meeting/')
+    
+    date_of_meeting = requests.get('http://admin:8000/api/meeting/')
     date_of_meeting = dt.datetime.strptime(
         date_of_meeting.json()[0].get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
-        )
+    )
+    
     await state.update_data(date_meeting=date_of_meeting)
     await msg.answer(
         constants.GREET.format(name=msg.from_user.full_name,
-                               date=date_of_meeting.strftime('%d.%m'),
-                               time=date_of_meeting.strftime('%H:%M')),
+                               date=date_of_meeting,
+                               time=date_of_meeting),
         reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
 
 
@@ -96,7 +98,7 @@ async def get_category(msg: Message, state: FSMContext):
 async def save_user(msg: Message, state: FSMContext):
     user_data = await state.get_data()
     requests.post(
-        f'http://127.0.0.1:8000/api/candidate/{user_data["telegram_ID"]}/',
+        f'http://admin:8000/api/candidate/{user_data["telegram_ID"]}/',
         user_data
         )
     await msg.answer(constants.SAVE_MESSAGE)

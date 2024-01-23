@@ -2,7 +2,10 @@ version: '3.3'
 services:
   admin:
     build: sozi_adm
-    restart: always
+    command: >
+      sh -c "poetry run python manage.py makemigrations &&
+             poetry run python manage.py migrate &&
+             poetry run python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
     env_file:
