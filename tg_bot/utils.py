@@ -15,6 +15,6 @@ def creare_keyboard(buttons):
 
 
 def get_base_url():
-    if not settings.DEBUG:
+    if settings.DEBUG:
         return STANDART_URL_DJANGO
     return DOCKER_URL
