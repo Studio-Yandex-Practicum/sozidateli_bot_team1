@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 import keyboards
 from states import RegisterUser
 import constants
-from utils import creare_keyboard
+from utils import creare_keyboard, get_base_url
 
 
 router = Router()
@@ -18,18 +18,25 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_handler(msg: Message, state: FSMContext):
-    
-    date_of_meeting = requests.get('http://admin:8000/api/meeting/')
-    date_of_meeting = dt.datetime.strptime(
-        date_of_meeting.json()[0].get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
-    )
-    
-    await state.update_data(date_meeting=date_of_meeting)
+
+    base_url = get_base_url()
+    date_of_meeting = requests.get(f'{base_url}:8000/api/meeting/').json()[0]
+    if date_of_meeting:
+        date_of_meeting = dt.datetime.strptime(
+            date_of_meeting.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
+        )
+        filler = constants.ADD_DATE_TO_GREET.format(
+            date=date_of_meeting.strftime('%d.%m'),
+            time=date_of_meeting.strftime('%H:%M'))
+        await state.update_data(confirm_date=date_of_meeting)
+
+    else:
+        filler = constants.ADD_WITHOUT_DATE
+
     await msg.answer(
-        constants.GREET.format(name=msg.from_user.full_name,
-                               date=date_of_meeting,
-                               time=date_of_meeting),
-        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
+            constants.GREET.format(name=msg.from_user.full_name,
+                                   filler=filler),
+            reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
 
 
 @router.message(F.text == 'Записаться на встречу')
@@ -57,7 +64,7 @@ async def get_name(msg: Message, state: FSMContext):
 async def get_phone(msg: Message, state: FSMContext):
     phone = msg.text
     if re.match(r'\+7[0-9]{10}',
-                phone):
+                phone) and len(phone) == 12:
         await state.update_data(phone=phone)
         await msg.answer(constants.GET_EMAIL,
                          reply_markup=creare_keyboard(keyboards.cancel))
@@ -87,6 +94,7 @@ async def get_category(msg: Message, state: FSMContext):
     user_data = await state.get_data()
     await msg.answer(
         constants.CHECK_DATA.format(
+            confirm_date=user_data['confirm_date'],
             name=user_data['name'],
             phone=user_data['phone'],
             email=user_data['email'],
@@ -97,11 +105,18 @@ async def get_category(msg: Message, state: FSMContext):
 @router.message(RegisterUser.category, F.text == 'Да')
 async def save_user(msg: Message, state: FSMContext):
     user_data = await state.get_data()
-    requests.post(
-        f'http://admin:8000/api/candidate/{user_data["telegram_ID"]}/',
+    base_url = get_base_url()
+    register = requests.post(
+        f'{base_url}:8000/api/candidate/{user_data["telegram_ID"]}/',
         user_data
         )
-    await msg.answer(constants.SAVE_MESSAGE)
+    if register.status_code == 201:
+        await msg.answer(constants.SAVE_MESSAGE)
+    else:
+        errors = constants.ERROR
+        for key in register.json():
+            errors = errors + register.json()[key][0] + '\n'
+        await msg.answer(errors)
     await state.set_state(RegisterUser.end_register)
 
 

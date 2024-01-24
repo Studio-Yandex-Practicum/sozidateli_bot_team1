@@ -11,9 +11,6 @@ class CandidateViewSet(viewsets.ModelViewSet):
     serializer_class = CandidateSerializer
 
     @action(
-        methods=['GET'],
-        url_name='check',
-        url_path='check',
         detail=True
     )
     def get_queryset(self):

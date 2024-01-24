@@ -5,9 +5,6 @@ from users.models import Candidate
 
 
 class CandidateSerializer(serializers.ModelSerializer):
-    is_register = serializers.SerializerMethodField(
-        method_name='get_is_register'
-    )
 
     class Meta:
         fields = ('email',
@@ -15,13 +12,8 @@ class CandidateSerializer(serializers.ModelSerializer):
                   'telegram_ID',
                   'phone',
                   'category',
-                  'is_register',)
+                  'confirm_date',)
         model = Candidate
-
-    def get_is_register(self, obj):
-        return Candidate.objects.filter(
-            telegram_ID=obj.telegram_ID
-        ).exists()
 
 
 class MeetingSerializer(serializers.ModelSerializer):
