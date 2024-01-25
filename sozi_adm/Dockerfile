@@ -20,7 +20,8 @@ WORKDIR /sozi_adm
 # COPY poetry.lock pyproject.toml ./
 COPY . .
 
-RUN poetry install
+RUN poetry config virtualenvs.create false \
+    && poetry install
 
 CMD ["poetry", "run", "python", "manage.py", "makemigrations"]
 CMD ["poetry", "run", "python", "manage.py", "migrate"]
