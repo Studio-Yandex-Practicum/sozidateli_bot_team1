@@ -25,7 +25,7 @@ def get_base_url():
 def get_date_of_meeting(location=False):
     base_url = get_base_url()
     response = requests.get(f'{base_url}:8000/api/meeting/').json()[0]
-    if response:
+    if response.get('date_meeting'):
         if location:
             return dt.datetime.strptime(
                 response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
@@ -33,4 +33,4 @@ def get_date_of_meeting(location=False):
         return dt.datetime.strptime(
                 response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
             )
-    return None
+    return None, None

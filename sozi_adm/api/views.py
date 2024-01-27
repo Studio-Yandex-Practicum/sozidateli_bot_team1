@@ -1,3 +1,5 @@
+import datetime as dt
+
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -33,4 +35,11 @@ class MeetingViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MeetingSerializer
 
     def get_queryset(self):
-        return (Meeting.objects.last(), )
+        date_in_db = Meeting.objects.last()
+        now = dt.datetime.now().timestamp()
+        # date_in_db = dt.datetime.strptime(
+        #         date_in_db.date_meeting, "%Y-%m-%dT%H:%M:%SZ"
+        #     )
+        if now < date_in_db.date_meeting.timestamp():
+            return (Meeting.objects.last(), )
+        return (Meeting(), )
