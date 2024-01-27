@@ -19,5 +19,5 @@ class CandidateSerializer(serializers.ModelSerializer):
 class MeetingSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('date_meeting',)
+        fields = ('date_meeting', 'location')
         model = Meeting

@@ -28,11 +28,12 @@ class Meeting(models.Model):
         help_text='Изменеие в дате/времени встречи',
         )
 
-    location = models.URLField(
+    location = models.CharField(
+        default='Санкт-Петербург, Перекупной переулок, 9',
         blank=True,
         max_length=200,
-        verbose_name='Ссылка на встречу',
-        help_text='Ссылка на встречу',
+        verbose_name='Место встречи',
+        help_text='Место встречи',
     )
 
     class Meta:

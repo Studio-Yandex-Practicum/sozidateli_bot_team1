@@ -8,3 +8,9 @@ class RegisterUser(StatesGroup):
     email = State()
     category = State()
     end_register = State()
+
+
+class MonitoringDate(StatesGroup):
+    wait_new_date = State()
+    invitation = State()
+    end_monitoring = State()

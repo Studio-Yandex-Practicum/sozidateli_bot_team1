@@ -1,5 +1,6 @@
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from meetings.models import Meeting
 from users.models import Candidate
@@ -10,15 +11,22 @@ class CandidateViewSet(viewsets.ModelViewSet):
     queryset = Candidate.objects.all()
     serializer_class = CandidateSerializer
 
-    @action(
-        detail=True
-    )
     def get_queryset(self):
         user_id = self.kwargs.get('id')
         try:
             return (Candidate.objects.get(telegram_ID=user_id), )
         except Candidate.DoesNotExist:
             return (Candidate(), )
+
+    @action(detail=True, methods='patch')
+    def patch(self, request, id):
+
+        user = Candidate.objects.get(telegram_ID=id)
+        serializer = CandidateSerializer(user, partial=True, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MeetingViewSet(viewsets.ReadOnlyModelViewSet):
