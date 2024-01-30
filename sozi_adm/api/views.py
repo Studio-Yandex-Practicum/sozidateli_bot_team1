@@ -40,6 +40,7 @@ class MeetingViewSet(viewsets.ReadOnlyModelViewSet):
         # date_in_db = dt.datetime.strptime(
         #         date_in_db.date_meeting, "%Y-%m-%dT%H:%M:%SZ"
         #     )
-        if now < date_in_db.date_meeting.timestamp():
-            return (Meeting.objects.last(), )
+        if date_in_db:
+            if now < date_in_db.date_meeting.timestamp():
+                return (Meeting.objects.last(), )
         return (Meeting(), )
