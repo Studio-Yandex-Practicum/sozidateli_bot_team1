@@ -24,6 +24,8 @@ INSTALLED_APPS = [
     'meetings.apps.MeetingsConfig',
     'rest_framework',
     'api',
+    'users',
+    'meetings',
 ]
 
 MIDDLEWARE = [
