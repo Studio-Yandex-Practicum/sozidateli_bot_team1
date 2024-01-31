@@ -16,10 +16,15 @@ yes_no = [
 
 invitation_to_a_meeting = [
     [KeyboardButton(text='Записаться на встречу')],
+    [KeyboardButton(text='Заполнить анкету, время выберу позже')],
     [KeyboardButton(text='Записаться на собеседование')],
     [KeyboardButton(text='Подробнее о нас')],
 ]
 
 cancel = [
     [KeyboardButton(text='Отмена')],
+]
+
+ok = [
+    [KeyboardButton(text='Хорошо')],
 ]

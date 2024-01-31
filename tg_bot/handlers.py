@@ -1,3 +1,4 @@
+import asyncio
 import datetime as dt
 import re
 import requests
@@ -8,9 +9,9 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 import keyboards
-from states import RegisterUser
+from states import RegisterUser, MonitoringDate
 import constants
-from utils import creare_keyboard
+from utils import creare_keyboard, get_base_url, get_date_of_meeting
 
 
 router = Router()
@@ -18,22 +19,29 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_handler(msg: Message, state: FSMContext):
-    
-    date_of_meeting = requests.get('http://admin:8000/api/meeting/')
-    date_of_meeting = dt.datetime.strptime(
-        date_of_meeting.json()[0].get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
-    )
-    
-    await state.update_data(date_meeting=date_of_meeting)
+
+    date_of_meeting, address = get_date_of_meeting(location=True)
+    if date_of_meeting:
+        filler = constants.ADD_DATE_TO_GREET.format(
+            date=date_of_meeting.strftime('%d.%m'),
+            time=date_of_meeting.strftime('%H:%M'),
+            address=address)
+        await state.update_data(confirm_date=date_of_meeting)
+
+    else:
+        filler = constants.ADD_WITHOUT_DATE
+
     await msg.answer(
-        constants.GREET.format(name=msg.from_user.full_name,
-                               date=date_of_meeting,
-                               time=date_of_meeting),
-        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
+            constants.GREET.format(name=msg.from_user.full_name,
+                                   filler=filler),
+            reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
 
 
+@router.message(F.text == 'Заполнить анкету, время выберу позже')
 @router.message(F.text == 'Записаться на встречу')
 async def agree(msg: Message, state: FSMContext):
+    if msg.text == 'Заполнить анкету, время выберу позже':
+        await state.update_data(confirm_date=None)
     await msg.answer(constants.GET_INFO)
     await msg.answer(constants.GET_NAME,
                      reply_markup=creare_keyboard(keyboards.cancel))
@@ -56,7 +64,7 @@ async def get_name(msg: Message, state: FSMContext):
 @router.message(RegisterUser.name, F.text != 'Отмена')
 async def get_phone(msg: Message, state: FSMContext):
     phone = msg.text
-    if re.match(r'\+7[0-9]{10}',
+    if re.match(r'\+7[0-9]{10}$',
                 phone):
         await state.update_data(phone=phone)
         await msg.answer(constants.GET_EMAIL,
@@ -87,6 +95,7 @@ async def get_category(msg: Message, state: FSMContext):
     user_data = await state.get_data()
     await msg.answer(
         constants.CHECK_DATA.format(
+            confirm_date=user_data['confirm_date'],
             name=user_data['name'],
             phone=user_data['phone'],
             email=user_data['email'],
@@ -97,12 +106,80 @@ async def get_category(msg: Message, state: FSMContext):
 @router.message(RegisterUser.category, F.text == 'Да')
 async def save_user(msg: Message, state: FSMContext):
     user_data = await state.get_data()
-    requests.post(
-        f'http://admin:8000/api/candidate/{user_data["telegram_ID"]}/',
+    base_url = get_base_url()
+    register = requests.post(
+        f'{base_url}:8000/api/candidate/{user_data["telegram_ID"]}/',
         user_data
         )
-    await msg.answer(constants.SAVE_MESSAGE)
-    await state.set_state(RegisterUser.end_register)
+
+    if not user_data['confirm_date']:
+        await state.set_state(MonitoringDate.wait_new_date)
+        old_date = get_date_of_meeting()
+        await state.update_data(confirm_date=old_date)
+        await msg.answer(constants.SAVE_WITHOUT_DATE,
+                         reply_markup=creare_keyboard(keyboards.ok))
+    else:
+        if register.status_code == 201:
+            await msg.answer(constants.SAVE_MESSAGE)
+            await state.set_state(RegisterUser.end_register)
+        else:
+            errors = constants.ERROR
+            for key in register.json():
+                errors = errors + register.json()[key][0] + '\n'
+            await msg.answer(errors)
+
+
+@router.message(MonitoringDate.wait_new_date, F.text == 'Хорошо')
+async def wait_new_date(msg: Message, state: FSMContext):
+    print('BEGIN MONITORING')
+    date_in_db = get_date_of_meeting()
+    user_data = await state.get_data()
+    while user_data['confirm_date'] == date_in_db:
+        print('ничего нового')
+        # now = dt.datetime.now()
+        # tomorrow = now + dt.timedelta(days=1)
+        # tomorrow_morning = dt.datetime(
+        # tomorrow.year,
+        # tomorrow.month,
+        # tomorrow.day,
+        # 10, 00)
+        # sleep_time = tomorrow_morning - now
+        # await asyncio.sleep(tomorrow_morning)
+        await asyncio.sleep(10)
+        date_in_db = get_date_of_meeting()
+    print('дата изменилась')
+    await msg.answer(constants.NEW_DATE.format(
+            date=date_in_db.strftime('%d.%m'),
+            time=date_in_db.strftime('%H:%M')),
+            reply_markup=creare_keyboard(keyboards.yes_no))
+    await state.set_state(MonitoringDate.invitation)
+    await state.update_data(confirm_date=date_in_db)
+
+
+@router.message(MonitoringDate.invitation, F.text == 'Да')
+async def upgrade_candidate_confirm_date(msg: Message, state: FSMContext):
+    base_url = get_base_url()
+    user_data = await state.get_data()
+    update = requests.patch(
+        f'{base_url}:8000/api/candidate/{user_data["telegram_ID"]}/',
+        {"confirm_date": user_data['confirm_date']}
+        )
+    if update.status_code == 200:
+        await msg.answer('Мы вас записали')
+        await state.set_state(MonitoringDate.end_monitoring)
+
+    else:
+        errors = constants.ERROR
+        for key in update.json():
+            errors = errors + update.json()[key][0] + '\n'
+        await msg.answer(errors)
+
+
+@router.message(MonitoringDate.invitation, F.text == 'Нет')
+async def cancel_new_date(msg: Message, state: FSMContext):
+    await msg.answer(constants.WHAIT_NEW_DATE,
+                     reply_markup=creare_keyboard(keyboards.ok))
+    await state.set_state(MonitoringDate.wait_new_date)
 
 
 @router.message(F.text == 'Нет')
