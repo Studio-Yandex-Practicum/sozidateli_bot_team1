@@ -73,10 +73,10 @@ jobs:
         port: 22222
         script: |
           cd sozidateli/
-          sudo docker compose -f docker-compose.production.yml pull
-          sudo docker compose -f docker-compose.production.yml down
-          sudo docker compose -f docker-compose.production.yml up -d
-          sudo docker compose -f docker-compose.production.yml exec sozi_adm poetry run python manage.py migrate
+          sudo -a docker compose -f docker-compose.production.yml pull
+          sudo -a docker compose -f docker-compose.production.yml down
+          sudo -a docker compose -f docker-compose.production.yml up -d
+          sudo -a docker compose -f docker-compose.production.yml exec sozi_adm poetry run python manage.py migrate
 
   send_message:
     name: Telegram notification
