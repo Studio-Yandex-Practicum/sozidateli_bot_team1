@@ -76,7 +76,7 @@ deploy:
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
-          sudo docker compose -f docker-compose.production.yml exec sozi_adm python manage.py migrate
+          sudo docker compose -f docker-compose.production.yml exec sozi_adm poetry run python manage.py migrate
 
   send_message:
     name: Telegram notification
