@@ -17,7 +17,7 @@ def creare_keyboard(buttons):
     )
 
 
-def get_base_url():
+def get_base_url() -> str:
     if debug:
         return STANDART_URL_DJANGO
     return DOCKER_URL
@@ -37,7 +37,20 @@ def get_date_of_meeting(location=False):
     return None, None
 
 
-def is_admin(user_id):
+def set_date_of_meeting(data) -> requests.Response:
+    """Обновление даты актуальной встречи."""
+
+    base_url = get_base_url()
+    response = requests.patch(
+        url=f'{base_url}:8000/api/meeting/',
+        data={
+            'date_meeting': data
+        }
+    )
+    return response
+
+
+def is_admin(user_id) -> bool:
     """Проверяем права админа по Telegram-ID."""
 
     return user_id in admins

@@ -11,7 +11,7 @@ from aiogram.fsm.context import FSMContext
 import keyboards
 from states import RegisterUser, MonitoringDate
 import constants
-from utils import creare_keyboard, get_base_url, get_date_of_meeting, is_admin
+from utils import creare_keyboard, get_base_url, get_date_of_meeting, is_admin, set_date_of_meeting
 
 
 router = Router()
@@ -53,6 +53,9 @@ async def admin_user_list(msg: Message, state: FSMContext):
     await state.set_state(RegisterUser.start_register)
 
 
+
+
+
 @router.message(F.text == '(Админ) Изменить дату встречи')
 async def admin_change_meeting(msg: Message, state: FSMContext):
     """Изменение даты встречи. (только для ТГ-администратора.)"""
@@ -68,7 +71,34 @@ async def admin_change_meeting(msg: Message, state: FSMContext):
             'Введите новую дату встречи:',
             reply_markup=creare_keyboard(keyboard))
 
-    await state.set_state(RegisterUser.start_register)
+    await state.set_state(RegisterUser.change_date)
+
+
+
+
+@router.message(RegisterUser.change_date, F.text != 'Отмена')
+async def admin_set_date(msg: Message, state: FSMContext):
+    if not is_admin(msg.from_user.id):
+        await msg.answer(constants.ERROR_NO_PERMISSION)
+
+    new_date = msg.text
+    if not re.match(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})',
+                new_date):
+        await msg.answer(constants.ERROR_IN_DATE)
+        
+    response = set_date_of_meeting(msg.text)
+    if response.status_code == 200:
+        await msg.answer(f'Дата сохранена. {response.text}')
+
+        keyboard = keyboards.admin_main if is_admin(msg.from_user.id) else []
+        keyboard.extend(keyboards.invitation_to_a_meeting)
+
+        await state.set_state(
+            RegisterUser.start_register,
+            reply_markup=creare_keyboard(keyboard)
+            )
+    else:
+        await msg.answer(f'Ошибка. {response.text}')
 
 
 @router.message(F.text == 'Заполнить анкету, время выберу позже')
@@ -238,6 +268,8 @@ async def menu(msg: Message, state: FSMContext):
     await state.set_data({})
     await state.clear()
     await msg.answer(constants.CANCEL_REGISTRATION)
+    keyboard = keyboards.admin_main if is_admin(msg.from_user.id) else []
+    keyboard.extend(keyboards.invitation_to_a_meeting)
     await msg.answer(
         constants.MENU,
-        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
+        reply_markup=creare_keyboard(keyboard))
