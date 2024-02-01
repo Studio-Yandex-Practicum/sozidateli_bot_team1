@@ -15,3 +15,7 @@ class MonitoringDate(StatesGroup):
     wait_new_date = State()
     invitation = State()
     end_monitoring = State()
+
+
+class Edite(StatesGroup):
+    is_edite = State()

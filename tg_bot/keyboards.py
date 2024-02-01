@@ -33,3 +33,10 @@ admin_main = [
     [KeyboardButton(text='(Админ) Список кандидатов')],
     [KeyboardButton(text='(Админ) Изменить дату встречи')],
 ]
+
+profile_fileds = [
+    [KeyboardButton(text='Имя'),
+     KeyboardButton(text='Телефон')],
+    [KeyboardButton(text='Электронную почту')],
+    [KeyboardButton(text='Закончить редактирование')],
+]

@@ -9,9 +9,13 @@ from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
 import keyboards
-from states import RegisterUser, MonitoringDate
+from states import RegisterUser, MonitoringDate, Edite
 import constants
-from utils import creare_keyboard, get_base_url, get_date_of_meeting, is_admin, set_date_of_meeting
+from utils import (creare_keyboard,
+                   get_base_url,
+                   get_date_of_meeting,
+                   is_admin,
+                   set_date_of_meeting)
 
 
 router = Router()
@@ -83,9 +87,9 @@ async def admin_set_date(msg: Message, state: FSMContext):
 
     new_date = msg.text
     if not re.match(r'(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})',
-                new_date):
+                    new_date):
         await msg.answer(constants.ERROR_IN_DATE)
-        
+
     response = set_date_of_meeting(msg.text)
     if response.status_code == 200:
         await msg.answer(f'Дата сохранена. {response.text}')
@@ -115,12 +119,18 @@ async def agree(msg: Message, state: FSMContext):
 @router.message(RegisterUser.start_register, F.text != 'Отмена')
 async def get_name(msg: Message, state: FSMContext):
     name = msg.text
+    user_data = await state.get_data()
     if re.match(r'\w', name):
         await state.update_data(user_id=msg.chat.id)
         await state.update_data(name=name)
-        await msg.answer(constants.GET_PHONE,
-                         reply_markup=creare_keyboard(keyboards.cancel))
-        await state.set_state(RegisterUser.name)
+        if user_data.get('is_edite'):
+            await state.set_state(Edite.is_edite)
+            await msg.answer(constants.CHOOSE_EDITE_FIELD,
+                             reply_markup=creare_keyboard(keyboards.profile_fileds))
+        else:
+            await msg.answer(constants.GET_PHONE,
+                             reply_markup=creare_keyboard(keyboards.cancel))
+            await state.set_state(RegisterUser.name)
     else:
         await msg.answer(constants.ERROR_IN_NAME)
 
@@ -128,12 +138,18 @@ async def get_name(msg: Message, state: FSMContext):
 @router.message(RegisterUser.name, F.text != 'Отмена')
 async def get_phone(msg: Message, state: FSMContext):
     phone = msg.text
+    user_data = await state.get_data()
     if re.match(r'\+7[0-9]{10}$',
                 phone):
         await state.update_data(phone=phone)
-        await msg.answer(constants.GET_EMAIL,
-                         reply_markup=creare_keyboard(keyboards.cancel))
-        await state.set_state(RegisterUser.phone)
+        if user_data.get('is_edite'):
+            await state.set_state(Edite.is_edite)
+            await msg.answer(constants.CHOOSE_EDITE_FIELD,
+                             reply_markup=creare_keyboard(keyboards.profile_fileds))
+        else:
+            await msg.answer(constants.GET_EMAIL,
+                             reply_markup=creare_keyboard(keyboards.cancel))
+            await state.set_state(RegisterUser.phone)
     else:
         await msg.answer(constants.ERROR_IN_PHONE)
 
@@ -141,30 +157,47 @@ async def get_phone(msg: Message, state: FSMContext):
 @router.message(RegisterUser.phone, F.text != 'Отмена')
 async def get_email(msg: Message, state: FSMContext):
     email = msg.text
+    user_data = await state.get_data()
     if re.match(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b',
                 email):
         await state.update_data(email=email)
-        await msg.answer(constants.CHOOSE_CATEGORY,
-                         reply_markup=creare_keyboard(keyboards.categories))
-        await state.set_state(RegisterUser.email)
+        if user_data.get('is_edite'):
+            await state.set_state(Edite.is_edite)
+            await msg.answer(constants.CHOOSE_EDITE_FIELD,
+                             reply_markup=creare_keyboard(keyboards.profile_fileds))
+        else:
+            await msg.answer(constants.CHOOSE_CATEGORY,
+                             reply_markup=creare_keyboard(keyboards.categories))
+            await state.set_state(RegisterUser.email)
     else:
         await msg.answer(constants.ERROR_IN_EMAIL)
 
 
+@router.message(F.text == 'Закончить редактирование')
 @router.message(RegisterUser.email, F.text != 'Отмена')
 async def get_category(msg: Message, state: FSMContext):
-    await state.update_data(category=msg.text,
-                            telegram_ID=msg.from_user.id)
+    if msg.text != 'Закончить редактирование':
+        await state.update_data(category=msg.text,
+                                telegram_ID=msg.from_user.id)
     await state.set_state(RegisterUser.category)
     user_data = await state.get_data()
-    await msg.answer(
-        constants.CHECK_DATA.format(
-            confirm_date=user_data['confirm_date'],
-            name=user_data['name'],
-            phone=user_data['phone'],
-            email=user_data['email'],
-            category=user_data['category']),
-        reply_markup=creare_keyboard(keyboards.yes_no))
+    if not user_data.get('confirm_date'):
+        await msg.answer(
+            constants.CHECK_DATA.format(
+                name=user_data['name'],
+                phone=user_data['phone'],
+                email=user_data['email'],
+                category=user_data['category']),
+            reply_markup=creare_keyboard(keyboards.yes_no))
+    else:
+        await msg.answer(
+            constants.CHECK_DATA.format(
+                confirm_date=user_data['confirm_date'],
+                name=user_data['name'],
+                phone=user_data['phone'],
+                email=user_data['email'],
+                category=user_data['category']),
+            reply_markup=creare_keyboard(keyboards.yes_no))
 
 
 @router.message(RegisterUser.category, F.text == 'Да')
@@ -176,7 +209,7 @@ async def save_user(msg: Message, state: FSMContext):
         user_data
         )
 
-    if not user_data['confirm_date']:
+    if not user_data.get('confirm_date'):
         await state.set_state(MonitoringDate.wait_new_date)
         old_date = get_date_of_meeting()
         await state.update_data(confirm_date=old_date)
@@ -248,19 +281,45 @@ async def cancel_new_date(msg: Message, state: FSMContext):
 
 @router.message(F.text == 'Нет')
 async def return_to_correct(msg: Message, state: FSMContext):
-    await msg.answer(constants.ONE_MORE_TIME)
-    await msg.answer(constants.GET_NAME)
-    await state.set_state(RegisterUser.start_register)
+    await msg.answer(constants.CHOOSE_EDITE_FIELD,
+                     reply_markup=creare_keyboard(keyboards.profile_fileds))
+    await state.set_state(Edite.is_edite)
+
+
+@router.message(Edite.is_edite, F.text)
+async def recall_wrong_field(msg: Message, state: FSMContext):
+    await state.update_data(is_edite=True)
+    if msg.text == 'Имя':
+        await msg.answer(constants.GET_NAME,
+                         reply_markup=creare_keyboard(keyboards.cancel))
+        await state.set_state(RegisterUser.start_register)
+
+    if msg.text == 'Телефон':
+        await msg.answer(constants.GET_PHONE,
+                         reply_markup=creare_keyboard(keyboards.cancel))
+        await state.set_state(RegisterUser.name)
+
+    if msg.text == 'Электронную почту':
+        await msg.answer(constants.GET_EMAIL,
+                         reply_markup=creare_keyboard(keyboards.cancel))
+        await state.set_state(RegisterUser.phone)
+
+    if msg.text == 'Категорию':
+        await msg.answer(constants.CHOOSE_CATEGORY,
+                         reply_markup=creare_keyboard(keyboards.categories))
+        await state.set_state(RegisterUser.email)
 
 
 @router.message(F.text == 'Записаться на собеседование')
 async def skip(msg: Message):
-    await msg.answer(constants.INVITATION_TO_INTERVIEW)
+    await msg.answer(constants.INVITATION_TO_INTERVIEW,
+                     reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
 
 
 @router.message(F.text == 'Подробнее о нас')
 async def about_us(msg: Message):
-    await msg.answer(constants.ABOUT_US)
+    await msg.answer(constants.ABOUT_US,
+                     reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
 
 
 @router.message(F.text == 'Отмена')
