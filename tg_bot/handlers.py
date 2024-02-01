@@ -11,7 +11,7 @@ from aiogram.fsm.context import FSMContext
 import keyboards
 from states import RegisterUser, MonitoringDate
 import constants
-from utils import creare_keyboard, get_base_url, get_date_of_meeting
+from utils import creare_keyboard, get_base_url, get_date_of_meeting, is_admin
 
 
 router = Router()
@@ -31,10 +31,44 @@ async def start_handler(msg: Message, state: FSMContext):
     else:
         filler = constants.ADD_WITHOUT_DATE
 
+    keyboard = keyboards.admin_main if is_admin(msg.from_user.id) else []
+    keyboard.extend(keyboards.invitation_to_a_meeting)
     await msg.answer(
             constants.GREET.format(name=msg.from_user.full_name,
                                    filler=filler),
-            reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
+            reply_markup=creare_keyboard(keyboard))
+
+
+@router.message(F.text == '(Админ) Список кандидатов')
+async def admin_user_list(msg: Message, state: FSMContext):
+    """Получение списка канидатов. (только для ТГ-администратора.)"""
+    if not is_admin(msg.from_user.id):
+        await msg.answer(constants.ERROR_NO_PERMISSION)
+    base_url = get_base_url()
+    response = requests.get(f'{base_url}:8000/api/candidate/').json()
+    reply = 'Кандидаты на ближайшую встречу:\n'
+    for i, candidate in enumerate(response):
+        reply += f'{i+1}. ' + candidate.get('name') + '\n'
+    await msg.answer(reply)
+    await state.set_state(RegisterUser.start_register)
+
+
+@router.message(F.text == '(Админ) Изменить дату встречи')
+async def admin_change_meeting(msg: Message, state: FSMContext):
+    """Изменение даты встречи. (только для ТГ-администратора.)"""
+
+    if not is_admin(msg.from_user.id):
+        await msg.answer(constants.ERROR_NO_PERMISSION)
+
+    old_date = get_date_of_meeting()
+    await msg.answer(f'Текущая встреча запланирована на {old_date}.')
+    keyboard = keyboards.ok
+    keyboard.extend(keyboards.cancel)
+    await msg.answer(
+            'Введите новую дату встречи:',
+            reply_markup=creare_keyboard(keyboard))
+
+    await state.set_state(RegisterUser.start_register)
 
 
 @router.message(F.text == 'Заполнить анкету, время выберу позже')

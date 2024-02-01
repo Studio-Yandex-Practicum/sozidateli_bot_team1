@@ -6,6 +6,7 @@ from config import config
 from constants import STANDART_URL_DJANGO, DOCKER_URL
 
 debug = config.debug
+admins = list(map(int, config.admins.split()))
 
 
 def creare_keyboard(buttons):
@@ -34,3 +35,9 @@ def get_date_of_meeting(location=False):
                 response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
             )
     return None, None
+
+
+def is_admin(user_id):
+    """Проверяем права админа по Telegram-ID."""
+
+    return user_id in admins

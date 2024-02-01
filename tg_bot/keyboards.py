@@ -28,3 +28,8 @@ cancel = [
 ok = [
     [KeyboardButton(text='Хорошо')],
 ]
+
+admin_main = [
+    [KeyboardButton(text='(Админ) Список кандидатов')],
+    [KeyboardButton(text='(Админ) Изменить дату встречи')],
+]
