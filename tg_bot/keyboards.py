@@ -40,3 +40,7 @@ profile_fileds = [
     [KeyboardButton(text='Электронную почту')],
     [KeyboardButton(text='Закончить редактирование')],
 ]
+
+start = [
+    [KeyboardButton(text='/start')],
+]

@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import re
 import requests
+from requests.exceptions import ConnectionError
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -23,8 +24,11 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_handler(msg: Message, state: FSMContext):
-
-    date_of_meeting, address = get_date_of_meeting(location=True)
+    try:
+        date_of_meeting, address = get_date_of_meeting(location=True)
+    except ConnectionError:
+        await msg.answer(constants.CONNECTION_ERROR,
+                   reply_markup=creare_keyboard(keyboards.start))
     if date_of_meeting:
         filler = constants.ADD_DATE_TO_GREET.format(
             date=date_of_meeting.strftime('%d.%m'),
@@ -67,7 +71,11 @@ async def admin_change_meeting(msg: Message, state: FSMContext):
     if not is_admin(msg.from_user.id):
         await msg.answer(constants.ERROR_NO_PERMISSION)
 
-    old_date = get_date_of_meeting()
+    try:
+        old_date = get_date_of_meeting()
+    except ConnectionError:
+        await msg.answer(constants.CONNECTION_ERROR,
+                   reply_markup=creare_keyboard(keyboards.start))
     await msg.answer(f'Текущая встреча запланирована на {old_date}.')
     keyboard = keyboards.ok
     keyboard.extend(keyboards.cancel)
@@ -204,14 +212,22 @@ async def get_category(msg: Message, state: FSMContext):
 async def save_user(msg: Message, state: FSMContext):
     user_data = await state.get_data()
     base_url = get_base_url()
-    register = requests.post(
-        f'{base_url}:8000/api/candidate/{user_data["telegram_ID"]}/',
-        user_data
-        )
+    try:
+        register = requests.post(
+            f'{base_url}:8000/api/candidate/',
+            user_data
+            )
+    except ConnectionError:
+        await msg.answer(constants.CONNECTION_ERROR,
+                reply_markup=creare_keyboard(keyboards.start))
 
     if not user_data.get('confirm_date'):
         await state.set_state(MonitoringDate.wait_new_date)
-        old_date = get_date_of_meeting()
+        try:
+            old_date = get_date_of_meeting()
+        except ConnectionError:
+            await msg.answer(constants.CONNECTION_ERROR,
+                   reply_markup=creare_keyboard(keyboards.start))
         await state.update_data(confirm_date=old_date)
         await msg.answer(constants.SAVE_WITHOUT_DATE,
                          reply_markup=creare_keyboard(keyboards.ok))
@@ -229,7 +245,11 @@ async def save_user(msg: Message, state: FSMContext):
 @router.message(MonitoringDate.wait_new_date, F.text == 'Хорошо')
 async def wait_new_date(msg: Message, state: FSMContext):
     print('BEGIN MONITORING')
-    date_in_db = get_date_of_meeting()
+    try:
+        date_in_db = get_date_of_meeting()
+    except ConnectionError:
+        await msg.answer(constants.CONNECTION_ERROR,
+                   reply_markup=creare_keyboard(keyboards.start))
     user_data = await state.get_data()
     while user_data['confirm_date'] == date_in_db:
         print('ничего нового')
@@ -243,7 +263,11 @@ async def wait_new_date(msg: Message, state: FSMContext):
         # sleep_time = tomorrow_morning - now
         # await asyncio.sleep(tomorrow_morning)
         await asyncio.sleep(10)
-        date_in_db = get_date_of_meeting()
+        try:
+            date_in_db = get_date_of_meeting()
+        except ConnectionError:
+            await msg.answer(constants.CONNECTION_ERROR,
+                   reply_markup=creare_keyboard(keyboards.start))
     print('дата изменилась')
     await msg.answer(constants.NEW_DATE.format(
             date=date_in_db.strftime('%d.%m'),
@@ -257,10 +281,14 @@ async def wait_new_date(msg: Message, state: FSMContext):
 async def upgrade_candidate_confirm_date(msg: Message, state: FSMContext):
     base_url = get_base_url()
     user_data = await state.get_data()
-    update = requests.patch(
-        f'{base_url}:8000/api/candidate/{user_data["telegram_ID"]}/',
-        {"confirm_date": user_data['confirm_date']}
-        )
+    try:
+        update = requests.patch(
+            f'{base_url}:8000/api/candidate/{user_data.get("telegram_ID")}/',
+            {"confirm_date": user_data['confirm_date']}
+            )
+    except ConnectionError:
+        await msg.answer(constants.CONNECTION_ERROR,
+                   reply_markup=creare_keyboard(keyboards.start))
     if update.status_code == 200:
         await msg.answer('Мы вас записали')
         await state.set_state(MonitoringDate.end_monitoring)

@@ -19,7 +19,7 @@ class CandidateViewSet(GeneralCandidateViewSet):
     def get_queryset(self):
         print(self.kwargs)
         user_id = self.kwargs.get('id')
-        print(Candidate.objects.get(telegram_ID=user_id))
+        # print(Candidate.objects.get(telegram_ID=user_id))
         try:
             return (Candidate.objects.get(telegram_ID=user_id), )
         except Candidate.DoesNotExist:

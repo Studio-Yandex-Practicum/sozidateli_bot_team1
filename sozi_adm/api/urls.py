@@ -5,7 +5,7 @@ from .views import CandidateViewSet, MeetingViewSet, GeneralCandidateViewSet
 
 router = DefaultRouter()
 
-router.register(r'candidate/(?P<id>\d+)', CandidateViewSet)
+# router.register(r'candidate/(?P<id>\d+)', CandidateViewSet)
 router.register(r'candidate', GeneralCandidateViewSet)
 
 #   TODO: объединить вьюсеты

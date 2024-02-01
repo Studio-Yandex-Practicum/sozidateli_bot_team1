@@ -17,6 +17,7 @@ class Candidate(models.Model):
         help_text='Имя',
     )
     telegram_ID = models.CharField(
+        primary_key=True,
         max_length=150,
         unique=True,
         blank=True,

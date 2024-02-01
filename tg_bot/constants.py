@@ -30,6 +30,7 @@ ERROR_IN_DATE = 'Дата указана неверно.'
 ERROR_NO_PERMISSION = 'Недостаточно прав'
 CHOOSE_CATEGORY = 'Выберите категорию'
 CANCEL_REGISTRATION = 'Отмена заполнения анкеты'
+CONNECTION_ERROR = 'К сожалению сервер недоступен, попробуйте позже'
 CHECK_DATA = """Данные указаны верно?
     Имя: {name}
     Телефон: {phone}
