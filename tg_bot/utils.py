@@ -32,8 +32,8 @@ def get_date_of_meeting(location=False):
                 response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
             ), response.get('location')
         return dt.datetime.strptime(
-                response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
-            )
+            response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
+        )
     return None, None
 
 
@@ -54,3 +54,33 @@ def is_admin(user_id) -> bool:
     """Проверяем права админа по Telegram-ID."""
 
     return user_id in admins
+
+
+def parse_pinned_message(pinned_message):
+    month_translation = {
+        'января': 'January',
+        'февраля': 'February',
+        'марта': 'March',
+        'апреля': 'April',
+        'мая': 'May',
+        'июня': 'June',
+        'июля': 'July',
+        'августа': 'August',
+        'сентября': 'September',
+        'октября': 'October',
+        'ноября': 'November',
+        'декабря': 'December'
+    }
+
+    pinned_text = pinned_message.text
+
+    date_time_str = (
+        pinned_text.split(
+            ' - ОТКРЫТАЯ ВСТРЕЧА')[0].strip())
+    for ru_month, en_month in month_translation.items():
+        date_time_str = date_time_str.replace(ru_month, en_month)
+
+    pinned_datetime = dt.datetime.strptime(date_time_str, '%d %B %H.%M')
+    current_datetime = dt.datetime.now()
+    pinned_datetime = pinned_datetime.replace(year=current_datetime.year)
+    return pinned_datetime

@@ -50,6 +50,6 @@ ABOUT_US = ('«Созидатели» — это команда отзывчив
             'Своей деятельностью меняем отношение общества к сиротам и инвалидам.')
 NEW_DATE = 'Назначена новая дата встречи {date} в {time}. Вы придете?'
 
-
+SITE_URL = 'https://sozidateli.spb.ru/volonteru/'
 STANDART_URL_DJANGO = 'http://127.0.0.1'
 DOCKER_URL = 'http://admin'
