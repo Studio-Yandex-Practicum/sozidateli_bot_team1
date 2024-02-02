@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
+from datetime import date  # Добавили импорт date из datetime
 
 from meetings.models import Meeting
 from users.models import Candidate
@@ -35,7 +36,8 @@ class CandidateViewSetTests(TestCase):
 
 class MeetingViewSetTests(TestCase):
     def setUp(self):
-        self.meeting = Meeting.objects.create(title='Test Meeting')
+        self.meeting = Meeting.objects.create(location='Test Meeting',
+                                              date_meeting=date.today())
 
     def test_get_meeting_list(self):
         url = reverse('meeting-list')
