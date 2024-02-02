@@ -1,6 +1,5 @@
 import asyncio
 import re
-from tg_bot.parser import parse_meeting_date_time
 
 import requests
 from aiogram import F, Router
@@ -11,6 +10,7 @@ from requests.exceptions import ConnectionError
 
 import constants
 import keyboards
+from tg_bot.parser import parse_meeting_date_time
 from tg_bot.states import Edite, MonitoringDate, RegisterUser
 from tg_bot.utils import (create_keyboard, get_base_url, get_date_of_meeting,
                           is_admin, set_date_of_meeting)
