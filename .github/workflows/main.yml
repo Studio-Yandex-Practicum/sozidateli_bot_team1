@@ -22,6 +22,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install poetry==1.4.1
+        cd sozi_adm/
         poetry install
         poetry add flake8
         poetry add flake8-isort
