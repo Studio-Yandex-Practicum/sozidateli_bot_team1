@@ -1,9 +1,10 @@
 import datetime as dt
+
 import requests
 from aiogram.types import ReplyKeyboardMarkup
 
 from config import config
-from constants import STANDART_URL_DJANGO, DOCKER_URL
+from constants import DOCKER_URL, STANDART_URL_DJANGO
 
 local = config.local
 admins = list(map(int, config.admins.split()))

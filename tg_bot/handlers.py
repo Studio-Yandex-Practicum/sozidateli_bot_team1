@@ -1,23 +1,19 @@
 import asyncio
 import re
-import requests
-from requests.exceptions import ConnectionError
+from parser import parse_meeting_date_time
 
+import requests
 from aiogram import F, Router
 from aiogram.filters import Command
-from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
+from requests.exceptions import ConnectionError
 
-import keyboards
-from states import RegisterUser, MonitoringDate, Edite
 import constants
-from parser import parse_meeting_date_time
-from utils import (creare_keyboard,
-                   get_base_url,
-                   get_date_of_meeting,
-                   is_admin,
-                   set_date_of_meeting)
-
+import keyboards
+from states import Edite, MonitoringDate, RegisterUser
+from utils import (creare_keyboard, get_base_url, get_date_of_meeting,
+                   is_admin, set_date_of_meeting)
 
 router = Router()
 

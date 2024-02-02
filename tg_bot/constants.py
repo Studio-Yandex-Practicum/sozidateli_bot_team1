@@ -1,5 +1,5 @@
 # flake8: noqa
-from aiogram.utils.markdown import text, italic
+from aiogram.utils.markdown import italic, text
 
 GREET = (
     'Привет, {name}! Мы очень рады, что Вас заинтересовала тема волонтерства.'

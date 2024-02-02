@@ -1,6 +1,8 @@
+from datetime import datetime
+
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+
 from constants import SITE_URL
 
 

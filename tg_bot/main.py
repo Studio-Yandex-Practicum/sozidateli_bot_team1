@@ -9,7 +9,6 @@ from aiogram.fsm.strategy import FSMStrategy
 from config import config
 from handlers import router
 
-
 TOKEN = config.bot_token
 
 
