@@ -48,7 +48,7 @@ jobs:
         poetry add flake8-isort
     - name: Test with flake8
       run: |
-        cd sozi_adm/
+        cd tg_bot/
         poetry run python -m flake8
 
   build_admin_and_push_to_docker_hub:
