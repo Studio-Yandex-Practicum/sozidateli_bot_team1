@@ -1,5 +1,4 @@
 import asyncio
-import datetime as dt
 import re
 import requests
 from requests.exceptions import ConnectionError
@@ -12,6 +11,7 @@ from aiogram.fsm.context import FSMContext
 import keyboards
 from states import RegisterUser, MonitoringDate, Edite
 import constants
+from parser import parse_meeting_date_time
 from utils import (creare_keyboard,
                    get_base_url,
                    get_date_of_meeting,
@@ -24,11 +24,14 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_handler(msg: Message, state: FSMContext):
+    """Начало диалога."""
     try:
         date_of_meeting, address = get_date_of_meeting(location=True)
     except ConnectionError:
-        await msg.answer(constants.CONNECTION_ERROR,
-                   reply_markup=creare_keyboard(keyboards.start))
+        await msg.answer(
+            constants.CONNECTION_ERROR,
+            reply_markup=creare_keyboard(keyboards.start)
+        )
     if date_of_meeting:
         filler = constants.ADD_DATE_TO_GREET.format(
             date=date_of_meeting.strftime('%d.%m'),
@@ -61,9 +64,6 @@ async def admin_user_list(msg: Message, state: FSMContext):
     await state.set_state(RegisterUser.start_register)
 
 
-
-
-
 @router.message(F.text == '(Админ) Изменить дату встречи')
 async def admin_change_meeting(msg: Message, state: FSMContext):
     """Изменение даты встречи. (только для ТГ-администратора.)"""
@@ -74,9 +74,15 @@ async def admin_change_meeting(msg: Message, state: FSMContext):
     try:
         old_date = get_date_of_meeting()
     except ConnectionError:
-        await msg.answer(constants.CONNECTION_ERROR,
-                   reply_markup=creare_keyboard(keyboards.start))
+        await msg.answer(
+            constants.CONNECTION_ERROR,
+            reply_markup=creare_keyboard(keyboards.start)
+        )
     await msg.answer(f'Текущая встреча запланирована на {old_date}.')
+
+    text = parse_meeting_date_time()
+    await msg.answer(f'Для справки:\nНа сайте указана: {text}.')
+
     keyboard = keyboards.ok
     keyboard.extend(keyboards.cancel)
     await msg.answer(
@@ -84,8 +90,6 @@ async def admin_change_meeting(msg: Message, state: FSMContext):
             reply_markup=creare_keyboard(keyboard))
 
     await state.set_state(RegisterUser.change_date)
-
-
 
 
 @router.message(RegisterUser.change_date, F.text != 'Отмена')
@@ -133,8 +137,10 @@ async def get_name(msg: Message, state: FSMContext):
         await state.update_data(name=name)
         if user_data.get('is_edite'):
             await state.set_state(Edite.is_edite)
-            await msg.answer(constants.CHOOSE_EDITE_FIELD,
-                             reply_markup=creare_keyboard(keyboards.profile_fileds))
+            await msg.answer(
+                constants.CHOOSE_EDITE_FIELD,
+                reply_markup=creare_keyboard(keyboards.profile_fileds)
+            )
         else:
             await msg.answer(constants.GET_PHONE,
                              reply_markup=creare_keyboard(keyboards.cancel))
@@ -152,11 +158,15 @@ async def get_phone(msg: Message, state: FSMContext):
         await state.update_data(phone=phone)
         if user_data.get('is_edite'):
             await state.set_state(Edite.is_edite)
-            await msg.answer(constants.CHOOSE_EDITE_FIELD,
-                             reply_markup=creare_keyboard(keyboards.profile_fileds))
+            await msg.answer(
+                constants.CHOOSE_EDITE_FIELD,
+                reply_markup=creare_keyboard(keyboards.profile_fileds)
+            )
         else:
-            await msg.answer(constants.GET_EMAIL,
-                             reply_markup=creare_keyboard(keyboards.cancel))
+            await msg.answer(
+                constants.GET_EMAIL,
+                reply_markup=creare_keyboard(keyboards.cancel)
+            )
             await state.set_state(RegisterUser.phone)
     else:
         await msg.answer(constants.ERROR_IN_PHONE)
@@ -171,11 +181,15 @@ async def get_email(msg: Message, state: FSMContext):
         await state.update_data(email=email)
         if user_data.get('is_edite'):
             await state.set_state(Edite.is_edite)
-            await msg.answer(constants.CHOOSE_EDITE_FIELD,
-                             reply_markup=creare_keyboard(keyboards.profile_fileds))
+            await msg.answer(
+                constants.CHOOSE_EDITE_FIELD,
+                reply_markup=creare_keyboard(keyboards.profile_fileds)
+            )
         else:
-            await msg.answer(constants.CHOOSE_CATEGORY,
-                             reply_markup=creare_keyboard(keyboards.categories))
+            await msg.answer(
+                constants.CHOOSE_CATEGORY,
+                reply_markup=creare_keyboard(keyboards.categories)
+            )
             await state.set_state(RegisterUser.email)
     else:
         await msg.answer(constants.ERROR_IN_EMAIL)
@@ -218,19 +232,25 @@ async def save_user(msg: Message, state: FSMContext):
             user_data
             )
     except ConnectionError:
-        await msg.answer(constants.CONNECTION_ERROR,
-                reply_markup=creare_keyboard(keyboards.start))
+        await msg.answer(
+            constants.CONNECTION_ERROR,
+            reply_markup=creare_keyboard(keyboards.start)
+        )
 
     if not user_data.get('confirm_date'):
         await state.set_state(MonitoringDate.wait_new_date)
         try:
             old_date = get_date_of_meeting()
         except ConnectionError:
-            await msg.answer(constants.CONNECTION_ERROR,
-                   reply_markup=creare_keyboard(keyboards.start))
+            await msg.answer(
+                constants.CONNECTION_ERROR,
+                reply_markup=creare_keyboard(keyboards.start)
+            )
         await state.update_data(confirm_date=old_date)
-        await msg.answer(constants.SAVE_WITHOUT_DATE,
-                         reply_markup=creare_keyboard(keyboards.ok))
+        await msg.answer(
+            constants.SAVE_WITHOUT_DATE,
+            reply_markup=creare_keyboard(keyboards.ok)
+        )
     else:
         if register.status_code == 201:
             await msg.answer(constants.SAVE_MESSAGE)
@@ -248,8 +268,10 @@ async def wait_new_date(msg: Message, state: FSMContext):
     try:
         date_in_db = get_date_of_meeting()
     except ConnectionError:
-        await msg.answer(constants.CONNECTION_ERROR,
-                   reply_markup=creare_keyboard(keyboards.start))
+        await msg.answer(
+            constants.CONNECTION_ERROR,
+            reply_markup=creare_keyboard(keyboards.start)
+        )
     user_data = await state.get_data()
     while user_data['confirm_date'] == date_in_db:
         print('ничего нового')
@@ -266,8 +288,10 @@ async def wait_new_date(msg: Message, state: FSMContext):
         try:
             date_in_db = get_date_of_meeting()
         except ConnectionError:
-            await msg.answer(constants.CONNECTION_ERROR,
-                   reply_markup=creare_keyboard(keyboards.start))
+            await msg.answer(
+                constants.CONNECTION_ERROR,
+                reply_markup=creare_keyboard(keyboards.start)
+            )
     print('дата изменилась')
     await msg.answer(constants.NEW_DATE.format(
             date=date_in_db.strftime('%d.%m'),
@@ -287,8 +311,10 @@ async def upgrade_candidate_confirm_date(msg: Message, state: FSMContext):
             {"confirm_date": user_data['confirm_date']}
             )
     except ConnectionError:
-        await msg.answer(constants.CONNECTION_ERROR,
-                   reply_markup=creare_keyboard(keyboards.start))
+        await msg.answer(
+            constants.CONNECTION_ERROR,
+            reply_markup=creare_keyboard(keyboards.start)
+        )
     if update.status_code == 200:
         await msg.answer('Мы вас записали')
         await state.set_state(MonitoringDate.end_monitoring)
@@ -340,14 +366,18 @@ async def recall_wrong_field(msg: Message, state: FSMContext):
 
 @router.message(F.text == 'Записаться на собеседование')
 async def skip(msg: Message):
-    await msg.answer(constants.INVITATION_TO_INTERVIEW,
-                     reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
+    await msg.answer(
+        constants.INVITATION_TO_INTERVIEW,
+        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting)
+    )
 
 
 @router.message(F.text == 'Подробнее о нас')
 async def about_us(msg: Message):
-    await msg.answer(constants.ABOUT_US,
-                     reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting))
+    await msg.answer(
+        constants.ABOUT_US,
+        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting)
+    )
 
 
 @router.message(F.text == 'Отмена')

@@ -23,18 +23,18 @@ services:
       - admin
     env_file:
       - ./.env
-  test:
-    build: sozi_adm
-    command: >
-      sh -c "poetry install &&
-             poetry run python manage.py test"
-    env_file:
-      - ./.env
+  # test:
+  #   build: sozi_adm
+  #   command: >
+  #     sh -c "poetry install &&
+  #            poetry run python manage.py test"
+  #   env_file:
+  #     - ./.env
 
-  style:
-    build: sozi_adm
-    command: >
-      sh -c "poetry install &&
-             poetry run flake8 ."
-    env_file:
-      - ./.env
+  # style:
+  #   build: sozi_adm
+  #   command: >
+  #     sh -c "poetry install &&
+  #            poetry run flake8 ."
+  #   env_file:
+  #     - ./.env

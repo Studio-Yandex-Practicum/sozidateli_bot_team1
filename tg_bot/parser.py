@@ -4,7 +4,9 @@ from datetime import datetime
 from constants import SITE_URL
 
 
-def parse_meeting_date_time(url):
+def parse_meeting_date_time():
+    """Получение даты встречи с сайта."""
+
     response = requests.get(SITE_URL)
     month_translation = {
         'января': 'January',
@@ -43,7 +45,7 @@ def parse_meeting_date_time(url):
     return None
 
 
-meeting_datetime = parse_meeting_date_time(SITE_URL)
+# meeting_datetime = parse_meeting_date_time()
 
-if meeting_datetime:
-    print(f'Дата и время встречи: {meeting_datetime}')
+# if meeting_datetime:
+#     print(f'Дата и время встречи: {meeting_datetime}')
