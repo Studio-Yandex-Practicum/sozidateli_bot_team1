@@ -1,7 +1,8 @@
+from datetime import date  # Добавили импорт date из datetime
+
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from datetime import date  # Добавили импорт date из datetime
 
 from meetings.models import Meeting
 from users.models import Candidate

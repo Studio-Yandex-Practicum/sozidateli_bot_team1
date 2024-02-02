@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from meetings.models import Meeting
 from users.models import Candidate
+
 from .serializers import CandidateSerializer, MeetingSerializer
 
 
