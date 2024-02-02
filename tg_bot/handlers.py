@@ -1,6 +1,6 @@
 import asyncio
 import re
-from parser import parse_meeting_date_time
+from tg_bot.parser import parse_meeting_date_time
 
 import requests
 from aiogram import F, Router
@@ -11,9 +11,9 @@ from requests.exceptions import ConnectionError
 
 import constants
 import keyboards
-from states import Edite, MonitoringDate, RegisterUser
-from utils import (creare_keyboard, get_base_url, get_date_of_meeting,
-                   is_admin, set_date_of_meeting)
+from tg_bot.states import Edite, MonitoringDate, RegisterUser
+from tg_bot.utils import (create_keyboard, get_base_url, get_date_of_meeting,
+                          is_admin, set_date_of_meeting)
 
 router = Router()
 
@@ -26,7 +26,7 @@ async def start_handler(msg: Message, state: FSMContext):
     except ConnectionError:
         await msg.answer(
             constants.CONNECTION_ERROR,
-            reply_markup=creare_keyboard(keyboards.start)
+            reply_markup=create_keyboard(keyboards.start)
         )
     if date_of_meeting:
         filler = constants.ADD_DATE_TO_GREET.format(
@@ -41,9 +41,12 @@ async def start_handler(msg: Message, state: FSMContext):
     keyboard = keyboards.admin_main if is_admin(msg.from_user.id) else []
     keyboard.extend(keyboards.invitation_to_a_meeting)
     await msg.answer(
-            constants.GREET.format(name=msg.from_user.full_name,
-                                   filler=filler),
-            reply_markup=creare_keyboard(keyboard))
+        constants.GREET.format(
+            name=msg.from_user.full_name,
+            filler=filler
+        ),
+        reply_markup=create_keyboard(keyboard)
+    )
 
 
 @router.message(F.text == '(Админ) Список кандидатов')
@@ -72,7 +75,7 @@ async def admin_change_meeting(msg: Message, state: FSMContext):
     except ConnectionError:
         await msg.answer(
             constants.CONNECTION_ERROR,
-            reply_markup=creare_keyboard(keyboards.start)
+            reply_markup=create_keyboard(keyboards.start)
         )
     await msg.answer(f'Текущая встреча запланирована на {old_date}.')
 
@@ -82,9 +85,9 @@ async def admin_change_meeting(msg: Message, state: FSMContext):
     keyboard = keyboards.ok
     keyboard.extend(keyboards.cancel)
     await msg.answer(
-            'Введите новую дату встречи:',
-            reply_markup=creare_keyboard(keyboard))
-
+        'Введите новую дату встречи:',
+        reply_markup=create_keyboard(keyboard)
+    )
     await state.set_state(RegisterUser.change_date)
 
 
@@ -107,8 +110,8 @@ async def admin_set_date(msg: Message, state: FSMContext):
 
         await state.set_state(
             RegisterUser.start_register,
-            reply_markup=creare_keyboard(keyboard)
-            )
+            reply_markup=create_keyboard(keyboard)
+        )
     else:
         await msg.answer(f'Ошибка. {response.text}')
 
@@ -120,7 +123,7 @@ async def agree(msg: Message, state: FSMContext):
         await state.update_data(confirm_date=None)
     await msg.answer(constants.GET_INFO)
     await msg.answer(constants.GET_NAME,
-                     reply_markup=creare_keyboard(keyboards.cancel))
+                     reply_markup=create_keyboard(keyboards.cancel))
     await state.set_state(RegisterUser.start_register)
 
 
@@ -135,11 +138,11 @@ async def get_name(msg: Message, state: FSMContext):
             await state.set_state(Edite.is_edite)
             await msg.answer(
                 constants.CHOOSE_EDITE_FIELD,
-                reply_markup=creare_keyboard(keyboards.profile_fileds)
+                reply_markup=create_keyboard(keyboards.profile_fileds)
             )
         else:
             await msg.answer(constants.GET_PHONE,
-                             reply_markup=creare_keyboard(keyboards.cancel))
+                             reply_markup=create_keyboard(keyboards.cancel))
             await state.set_state(RegisterUser.name)
     else:
         await msg.answer(constants.ERROR_IN_NAME)
@@ -156,12 +159,12 @@ async def get_phone(msg: Message, state: FSMContext):
             await state.set_state(Edite.is_edite)
             await msg.answer(
                 constants.CHOOSE_EDITE_FIELD,
-                reply_markup=creare_keyboard(keyboards.profile_fileds)
+                reply_markup=create_keyboard(keyboards.profile_fileds)
             )
         else:
             await msg.answer(
                 constants.GET_EMAIL,
-                reply_markup=creare_keyboard(keyboards.cancel)
+                reply_markup=create_keyboard(keyboards.cancel)
             )
             await state.set_state(RegisterUser.phone)
     else:
@@ -179,12 +182,12 @@ async def get_email(msg: Message, state: FSMContext):
             await state.set_state(Edite.is_edite)
             await msg.answer(
                 constants.CHOOSE_EDITE_FIELD,
-                reply_markup=creare_keyboard(keyboards.profile_fileds)
+                reply_markup=create_keyboard(keyboards.profile_fileds)
             )
         else:
             await msg.answer(
                 constants.CHOOSE_CATEGORY,
-                reply_markup=creare_keyboard(keyboards.categories)
+                reply_markup=create_keyboard(keyboards.categories)
             )
             await state.set_state(RegisterUser.email)
     else:
@@ -206,7 +209,7 @@ async def get_category(msg: Message, state: FSMContext):
                 phone=user_data['phone'],
                 email=user_data['email'],
                 category=user_data['category']),
-            reply_markup=creare_keyboard(keyboards.yes_no))
+            reply_markup=create_keyboard(keyboards.yes_no))
     else:
         await msg.answer(
             constants.CHECK_DATA.format(
@@ -215,7 +218,7 @@ async def get_category(msg: Message, state: FSMContext):
                 phone=user_data['phone'],
                 email=user_data['email'],
                 category=user_data['category']),
-            reply_markup=creare_keyboard(keyboards.yes_no))
+            reply_markup=create_keyboard(keyboards.yes_no))
 
 
 @router.message(RegisterUser.category, F.text == 'Да')
@@ -226,11 +229,11 @@ async def save_user(msg: Message, state: FSMContext):
         register = requests.post(
             f'{base_url}:8000/api/candidate/',
             user_data
-            )
+        )
     except ConnectionError:
         await msg.answer(
             constants.CONNECTION_ERROR,
-            reply_markup=creare_keyboard(keyboards.start)
+            reply_markup=create_keyboard(keyboards.start)
         )
 
     if not user_data.get('confirm_date'):
@@ -240,12 +243,12 @@ async def save_user(msg: Message, state: FSMContext):
         except ConnectionError:
             await msg.answer(
                 constants.CONNECTION_ERROR,
-                reply_markup=creare_keyboard(keyboards.start)
+                reply_markup=create_keyboard(keyboards.start)
             )
         await state.update_data(confirm_date=old_date)
         await msg.answer(
             constants.SAVE_WITHOUT_DATE,
-            reply_markup=creare_keyboard(keyboards.ok)
+            reply_markup=create_keyboard(keyboards.ok)
         )
     else:
         if register.status_code == 201:
@@ -266,7 +269,7 @@ async def wait_new_date(msg: Message, state: FSMContext):
     except ConnectionError:
         await msg.answer(
             constants.CONNECTION_ERROR,
-            reply_markup=creare_keyboard(keyboards.start)
+            reply_markup=create_keyboard(keyboards.start)
         )
     user_data = await state.get_data()
     while user_data['confirm_date'] == date_in_db:
@@ -286,13 +289,14 @@ async def wait_new_date(msg: Message, state: FSMContext):
         except ConnectionError:
             await msg.answer(
                 constants.CONNECTION_ERROR,
-                reply_markup=creare_keyboard(keyboards.start)
+                reply_markup=create_keyboard(keyboards.start)
             )
     print('дата изменилась')
     await msg.answer(constants.NEW_DATE.format(
-            date=date_in_db.strftime('%d.%m'),
-            time=date_in_db.strftime('%H:%M')),
-            reply_markup=creare_keyboard(keyboards.yes_no))
+        date=date_in_db.strftime('%d.%m'),
+        time=date_in_db.strftime('%H:%M')),
+        reply_markup=create_keyboard(keyboards.yes_no)
+    )
     await state.set_state(MonitoringDate.invitation)
     await state.update_data(confirm_date=date_in_db)
 
@@ -305,11 +309,11 @@ async def upgrade_candidate_confirm_date(msg: Message, state: FSMContext):
         update = requests.patch(
             f'{base_url}:8000/api/candidate/{user_data.get("telegram_ID")}/',
             {"confirm_date": user_data['confirm_date']}
-            )
+        )
     except ConnectionError:
         await msg.answer(
             constants.CONNECTION_ERROR,
-            reply_markup=creare_keyboard(keyboards.start)
+            reply_markup=create_keyboard(keyboards.start)
         )
     if update.status_code == 200:
         await msg.answer('Мы вас записали')
@@ -325,14 +329,14 @@ async def upgrade_candidate_confirm_date(msg: Message, state: FSMContext):
 @router.message(MonitoringDate.invitation, F.text == 'Нет')
 async def cancel_new_date(msg: Message, state: FSMContext):
     await msg.answer(constants.WHAIT_NEW_DATE,
-                     reply_markup=creare_keyboard(keyboards.ok))
+                     reply_markup=create_keyboard(keyboards.ok))
     await state.set_state(MonitoringDate.wait_new_date)
 
 
 @router.message(F.text == 'Нет')
 async def return_to_correct(msg: Message, state: FSMContext):
     await msg.answer(constants.CHOOSE_EDITE_FIELD,
-                     reply_markup=creare_keyboard(keyboards.profile_fileds))
+                     reply_markup=create_keyboard(keyboards.profile_fileds))
     await state.set_state(Edite.is_edite)
 
 
@@ -341,22 +345,22 @@ async def recall_wrong_field(msg: Message, state: FSMContext):
     await state.update_data(is_edite=True)
     if msg.text == 'Имя':
         await msg.answer(constants.GET_NAME,
-                         reply_markup=creare_keyboard(keyboards.cancel))
+                         reply_markup=create_keyboard(keyboards.cancel))
         await state.set_state(RegisterUser.start_register)
 
     if msg.text == 'Телефон':
         await msg.answer(constants.GET_PHONE,
-                         reply_markup=creare_keyboard(keyboards.cancel))
+                         reply_markup=create_keyboard(keyboards.cancel))
         await state.set_state(RegisterUser.name)
 
     if msg.text == 'Электронную почту':
         await msg.answer(constants.GET_EMAIL,
-                         reply_markup=creare_keyboard(keyboards.cancel))
+                         reply_markup=create_keyboard(keyboards.cancel))
         await state.set_state(RegisterUser.phone)
 
     if msg.text == 'Категорию':
         await msg.answer(constants.CHOOSE_CATEGORY,
-                         reply_markup=creare_keyboard(keyboards.categories))
+                         reply_markup=create_keyboard(keyboards.categories))
         await state.set_state(RegisterUser.email)
 
 
@@ -364,7 +368,7 @@ async def recall_wrong_field(msg: Message, state: FSMContext):
 async def skip(msg: Message):
     await msg.answer(
         constants.INVITATION_TO_INTERVIEW,
-        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting)
+        reply_markup=create_keyboard(keyboards.invitation_to_a_meeting)
     )
 
 
@@ -372,7 +376,7 @@ async def skip(msg: Message):
 async def about_us(msg: Message):
     await msg.answer(
         constants.ABOUT_US,
-        reply_markup=creare_keyboard(keyboards.invitation_to_a_meeting)
+        reply_markup=create_keyboard(keyboards.invitation_to_a_meeting)
     )
 
 
@@ -385,4 +389,4 @@ async def menu(msg: Message, state: FSMContext):
     keyboard.extend(keyboards.invitation_to_a_meeting)
     await msg.answer(
         constants.MENU,
-        reply_markup=creare_keyboard(keyboard))
+        reply_markup=create_keyboard(keyboard))

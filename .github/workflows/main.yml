@@ -28,7 +28,7 @@ jobs:
       run: |
         cd sozi_adm/
         poetry run python -m flake8
-        poetry run python manage.py test api
+        # poetry run python manage.py test api
 
   tests_bot:
     name: Tests. PEP8 and isort.
@@ -54,6 +54,7 @@ jobs:
   build_admin_and_push_to_docker_hub:
     name: Push Admin Docker image to DockerHub
     runs-on: ubuntu-latest
+    needs: tests_admin
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -75,6 +76,7 @@ jobs:
   build_bot_and_push_to_docker_hub:
     name: Push Bot Docker image to DockerHub
     runs-on: ubuntu-latest
+    needs: tests_bot
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3

@@ -10,7 +10,7 @@ local = config.local
 admins = list(map(int, config.admins.split()))
 
 
-def creare_keyboard(buttons):
+def create_keyboard(buttons):
     return ReplyKeyboardMarkup(
         keyboard=buttons,
         resize_keyboard=True,
