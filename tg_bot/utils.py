@@ -5,7 +5,7 @@ from aiogram.types import ReplyKeyboardMarkup
 from config import config
 from constants import STANDART_URL_DJANGO, DOCKER_URL
 
-debug = config.debug
+local = config.local
 admins = list(map(int, config.admins.split()))
 
 
@@ -18,7 +18,7 @@ def creare_keyboard(buttons):
 
 
 def get_base_url() -> str:
-    if debug:
+    if local:
         return STANDART_URL_DJANGO
     return DOCKER_URL
 
