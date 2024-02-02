@@ -17,7 +17,6 @@ class GeneralCandidateViewSet(viewsets.ModelViewSet):
 class CandidateViewSet(GeneralCandidateViewSet):
 
     def get_queryset(self):
-        print(self.kwargs)
         user_id = self.kwargs.get('id')
         # print(Candidate.objects.get(telegram_ID=user_id))
         try:
@@ -27,7 +26,6 @@ class CandidateViewSet(GeneralCandidateViewSet):
 
     @action(detail=True, methods='patch')
     def patch(self, request, id):
-        print('patch!!!!')
         user = Candidate.objects.get(telegram_ID=id)
         serializer = CandidateSerializer(user, partial=True, data=request.data)
         if serializer.is_valid():
@@ -55,7 +53,9 @@ class MeetingViewSet(viewsets.ReadOnlyModelViewSet):
         """Изменение информации об актуальной встрече."""
 
         actual_meeting = Meeting.objects.last()
-        serializer = MeetingSerializer(actual_meeting, partial=True, data=request.data)
+        serializer = MeetingSerializer(
+            actual_meeting, partial=True, data=request.data
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

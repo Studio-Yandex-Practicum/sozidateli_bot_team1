@@ -26,7 +26,7 @@ class Meeting(models.Model):
         auto_now=True,
         verbose_name='Изменеие в дате/времени встречи',
         help_text='Изменеие в дате/времени встречи',
-        )
+    )
 
     location = models.CharField(
         default='Санкт-Петербург, Перекупной переулок, 9',
