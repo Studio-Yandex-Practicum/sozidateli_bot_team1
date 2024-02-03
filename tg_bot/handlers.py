@@ -38,7 +38,9 @@ async def start_handler(msg: Message, state: FSMContext):
     else:
         filler = constants.ADD_WITHOUT_DATE
 
-    keyboard = keyboards.admin_main.copy() if is_admin(msg.from_user.id) else []
+    keyboard = keyboards.admin_main.copy() if is_admin(
+        msg.from_user.id
+    ) else []
     keyboard.extend(keyboards.invitation_to_a_meeting)
     await msg.answer(
         constants.GREET.format(
