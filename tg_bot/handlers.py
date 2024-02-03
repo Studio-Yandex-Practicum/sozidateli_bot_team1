@@ -38,7 +38,7 @@ async def start_handler(msg: Message, state: FSMContext):
     else:
         filler = constants.ADD_WITHOUT_DATE
 
-    keyboard = keyboards.admin_main if is_admin(msg.from_user.id) else []
+    keyboard = keyboards.admin_main.copy() if is_admin(msg.from_user.id) else []
     keyboard.extend(keyboards.invitation_to_a_meeting)
     await msg.answer(
         constants.GREET.format(
@@ -82,7 +82,7 @@ async def admin_change_meeting(msg: Message, state: FSMContext):
     text = parse_meeting_date_time()
     await msg.answer(f'Для справки:\nНа сайте указана: {text}.')
 
-    keyboard = keyboards.ok
+    keyboard = keyboards.ok.copy()
     keyboard.extend(keyboards.cancel)
     await msg.answer(
         'Введите новую дату встречи:',
@@ -105,7 +105,9 @@ async def admin_set_date(msg: Message, state: FSMContext):
     if response.status_code == 200:
         await msg.answer(f'Дата сохранена. {response.text}')
 
-        keyboard = keyboards.admin_main if is_admin(msg.from_user.id) else []
+        keyboard = keyboards.admin_main.copy() if is_admin(
+            msg.from_user.id
+        ) else []
         keyboard.extend(keyboards.invitation_to_a_meeting)
 
         await state.set_state(
@@ -246,9 +248,13 @@ async def save_user(msg: Message, state: FSMContext):
                 reply_markup=create_keyboard(keyboards.start)
             )
         await state.update_data(confirm_date=old_date)
+
+        keyboard_ok_cancel = []
+        keyboard_ok_cancel.extend(keyboards.ok)
+        keyboard_ok_cancel.extend(keyboards.cancel)
         await msg.answer(
             constants.SAVE_WITHOUT_DATE,
-            reply_markup=create_keyboard(keyboards.ok)
+            reply_markup=create_keyboard(keyboard_ok_cancel)
         )
     else:
         if register.status_code == 201:
@@ -328,8 +334,11 @@ async def upgrade_candidate_confirm_date(msg: Message, state: FSMContext):
 
 @router.message(MonitoringDate.invitation, F.text == 'Нет')
 async def cancel_new_date(msg: Message, state: FSMContext):
+    keyboard_ok_cancel = []
+    keyboard_ok_cancel.extend(keyboards.ok)
+    keyboard_ok_cancel.extend(keyboards.cancel)
     await msg.answer(constants.WHAIT_NEW_DATE,
-                     reply_markup=create_keyboard(keyboards.ok))
+                     reply_markup=create_keyboard(keyboard_ok_cancel))
     await state.set_state(MonitoringDate.wait_new_date)
 
 
@@ -385,7 +394,9 @@ async def menu(msg: Message, state: FSMContext):
     await state.set_data({})
     await state.clear()
     await msg.answer(constants.CANCEL_REGISTRATION)
-    keyboard = keyboards.admin_main if is_admin(msg.from_user.id) else []
+    keyboard = keyboards.admin_main.copy() if is_admin(
+        msg.from_user.id
+    ) else []
     keyboard.extend(keyboards.invitation_to_a_meeting)
     await msg.answer(
         constants.MENU,
