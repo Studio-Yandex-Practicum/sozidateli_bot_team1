@@ -1,0 +1,40 @@
+version: '3.3'
+
+volumes:
+  database:
+
+services:
+  admin:
+    build: sozi_adm
+    command: >
+      sh -c "poetry run python manage.py makemigrations &&
+             poetry run python manage.py migrate &&
+             poetry run python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    volumes:
+      - database:/app/database
+
+  bot:
+    build: tg_bot
+    depends_on:
+      - admin
+    env_file:
+      - ./.env
+  # test:
+  #   build: sozi_adm
+  #   command: >
+  #     sh -c "poetry install &&
+  #            poetry run python manage.py test"
+  #   env_file:
+  #     - ./.env
+
+  # style:
+  #   build: sozi_adm
+  #   command: >
+  #     sh -c "poetry install &&
+  #            poetry run flake8 ."
+  #   env_file:
+  #     - ./.env
