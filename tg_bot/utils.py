@@ -30,10 +30,10 @@ def get_date_of_meeting(location=False):
     if response.get('date_meeting'):
         if location:
             return dt.datetime.strptime(
-                response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
+                response.get('date_meeting'), "%Y-%m-%dT%H:%M:%S%z"
             ), response.get('location')
         return dt.datetime.strptime(
-            response.get('date_meeting'), "%Y-%m-%dT%H:%M:%SZ"
+            response.get('date_meeting'), "%Y-%m-%dT%H:%M:%S%z"  # было %SZ
         )
     return None, None
 
